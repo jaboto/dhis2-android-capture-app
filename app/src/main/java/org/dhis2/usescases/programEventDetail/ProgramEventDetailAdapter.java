@@ -19,10 +19,10 @@ import java.util.List;
 
 public class ProgramEventDetailAdapter extends RecyclerView.Adapter<ProgramEventDetailViewHolder> {
 
-    private ProgramEventDetailContract.Presenter presenter;
+    private ProgramEventDetailPresenter presenter;
     private List<ProgramEventViewModel> events;
 
-    ProgramEventDetailAdapter(ProgramEventDetailContract.Presenter presenter) {
+    ProgramEventDetailAdapter(ProgramEventDetailPresenter presenter) {
         this.presenter = presenter;
         this.events = new ArrayList<>();
     }
