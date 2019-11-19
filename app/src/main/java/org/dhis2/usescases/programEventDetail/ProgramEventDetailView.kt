@@ -24,7 +24,7 @@ interface ProgramEventDetailView : AbstractActivityContracts.View {
 
     fun showHideFilter()
 
-    fun setWritePermission(aBoolean: Boolean)
+    fun setWritePermission(canWrite: Boolean)
 
     fun setLiveData(pagedListLiveData: LiveData<PagedList<ProgramEventViewModel>>)
 

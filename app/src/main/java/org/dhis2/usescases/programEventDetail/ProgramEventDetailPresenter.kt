@@ -3,6 +3,7 @@ package org.dhis2.usescases.programEventDetail
 import com.mapbox.mapboxsdk.geometry.LatLng
 import io.reactivex.Observable
 import io.reactivex.disposables.CompositeDisposable
+import io.reactivex.functions.Consumer
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
 import org.dhis2.data.schedulers.SchedulerProvider
@@ -115,8 +116,8 @@ class ProgramEventDetailPresenter(
                 .subscribeOn(schedulerProvider.computation())
                 .observeOn(schedulerProvider.ui())
                 .subscribe(
-                    { view.setMap() },
-                    Timber::e
+                    view.setMap(),
+                    Consumer { Timber.e(it) }
                 )
         )
 

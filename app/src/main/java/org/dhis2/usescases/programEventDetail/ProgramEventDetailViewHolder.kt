@@ -25,51 +25,39 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package org.dhis2.usescases.programEventDetail
 
-import com.squareup.sqlbrite2.BriteDatabase
-import dagger.Module
-import dagger.Provides
-import org.dhis2.data.dagger.PerActivity
-import org.dhis2.data.schedulers.SchedulerProvider
-import org.dhis2.utils.filters.FilterManager
-import org.hisp.dhis.android.core.D2
+import androidx.recyclerview.widget.RecyclerView
+import org.dhis2.BR
+import org.dhis2.databinding.ItemProgramEventBinding
 
-@PerActivity
-@Module
-class ProgramEventDetailModule(
-    private val view: ProgramEventDetailView,
-    private val programUid: String
-) {
+class ProgramEventDetailViewHolder(private val binding: ItemProgramEventBinding) :
+    RecyclerView.ViewHolder(binding.root) {
 
-    @Provides
-    @PerActivity
-    internal fun provideView(activity: ProgramEventDetailActivity): ProgramEventDetailView {
-        return activity
-    }
+    fun bind(presenter: ProgramEventDetailPresenter, event: ProgramEventViewModel) {
+        binding.setVariable(BR.presenter, presenter)
+        binding.setVariable(BR.event, event)
+        binding.executePendingBindings()
 
-    @Provides
-    @PerActivity
-    internal fun providesPresenter(
-        programEventDetailRepository: ProgramEventDetailRepository,
-        schedulerProvider: SchedulerProvider,
-        filterManager: FilterManager
-    ): ProgramEventDetailPresenter {
-        return ProgramEventDetailPresenter(
-            view,
-            programEventDetailRepository,
-            schedulerProvider,
-            filterManager
-        )
-    }
+        val stringBuilder = StringBuilder("")
+        val valuesSize = if (event.eventDisplayData().size > 3) 3 else event.eventDisplayData().size
+        for (i in 0 until valuesSize) {
+            if (event.eventDisplayData()[i] != null) {
+                stringBuilder.append(event.eventDisplayData()[i].val1())
+            }
+            if (i != valuesSize - 1) {
+                stringBuilder.append("|")
+            }
+        }
+        binding.dataValue.text = stringBuilder
 
-    @Provides
-    @PerActivity
-    internal fun eventDetailRepository(
-        briteDatabase: BriteDatabase,
-        d2: D2
-    ): ProgramEventDetailRepository {
-        return ProgramEventDetailRepositoryImpl(programUid, briteDatabase, d2)
+        binding.syncIcon.setOnClickListener { presenter.onSyncIconClick(event.uid()) }
+
+        itemView.setOnClickListener {
+            presenter.onEventClick(
+                event.uid(),
+                event.orgUnitUid()
+            )
+        }
     }
 }

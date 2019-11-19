@@ -85,14 +85,16 @@ import org.dhis2.utils.Constants.ORG_UNIT
 import org.dhis2.utils.Constants.PROGRAM_UID
 import org.dhis2.utils.DateUtils
 import org.dhis2.utils.HelpManager
-import org.dhis2.utils.analytics.*
 import org.dhis2.utils.analytics.CLICK
+import org.dhis2.utils.analytics.CREATE_EVENT
+import org.dhis2.utils.analytics.DATA_CREATION
 import org.dhis2.utils.analytics.SHOW_HELP
 import org.dhis2.utils.filters.FilterManager
 import org.dhis2.utils.filters.FiltersAdapter
 import org.dhis2.utils.granularsync.GranularSyncContracts
-import org.dhis2.utils.granularsync.GranularSyncModule
 import org.dhis2.utils.granularsync.SyncStatusDialog
+import org.dhis2.utils.maps.MapLayerManager.Companion.POINT_LAYER_ID
+import org.dhis2.utils.maps.MapLayerManager.Companion.POLYGON_LAYER_ID
 import org.hisp.dhis.android.core.category.CategoryCombo
 import org.hisp.dhis.android.core.category.CategoryOptionCombo
 import org.hisp.dhis.android.core.common.FeatureType
@@ -112,9 +114,8 @@ class ProgramEventDetailActivity :
     private lateinit var binding: ActivityProgramEventDetailBinding
     private lateinit var programUid: String
     private lateinit var filtersAdapter: FiltersAdapter
+    private lateinit var liveAdapter: ProgramEventDetailLiveAdapter
 
-
-    private var liveAdapter: ProgramEventDetailLiveAdapter? = null
     private var backDropActive: Boolean = false
     private var map: MapboxMap? = null
     private var symbolManager: SymbolManager? = null
@@ -198,8 +199,8 @@ class ProgramEventDetailActivity :
             this,
             Observer { pagedList ->
                 binding.programProgress.visibility = View.GONE
-                liveAdapter!!.submitList(pagedList) {
-                    if (binding.recycler.adapter != null && binding.recycler.adapter!!.itemCount == 0) {
+                liveAdapter.submitList(pagedList) {
+                    if (binding.recycler.adapter?.itemCount == 0) {
                         binding.emptyTeis.visibility = View.VISIBLE
                         binding.recycler.visibility = View.GONE
                     } else {
@@ -212,21 +213,18 @@ class ProgramEventDetailActivity :
     }
 
     override fun setOptionComboAccess(canCreateEvent: Boolean) {
-        when (binding.addEventButton.visibility) {
-            View.VISIBLE ->
-                binding.addEventButton.visibility =
-                    if (canCreateEvent) View.VISIBLE else View.GONE
-            View.GONE -> binding.addEventButton.visibility = View.GONE
+        binding.addEventButton.visibility = when {
+            binding.addEventButton.visibility == View.VISIBLE && canCreateEvent -> View.VISIBLE
+            else -> View.GONE
         }
     }
 
     override fun renderError(message: String) {
-        if (activity != null)
-            AlertDialog.Builder(activity)
-                .setPositiveButton(android.R.string.ok, null)
-                .setTitle(getString(R.string.error))
-                .setMessage(message)
-                .show()
+        AlertDialog.Builder(activity)
+            .setPositiveButton(android.R.string.ok, null)
+            .setTitle(getString(R.string.error))
+            .setMessage(message)
+            .show()
     }
 
     override fun showHideFilter() {
@@ -260,7 +258,7 @@ class ProgramEventDetailActivity :
     }
 
     override fun clearFilters() {
-        filtersAdapter!!.notifyDataSetChanged()
+        filtersAdapter.notifyDataSetChanged()
     }
 
     override fun setFeatureType(): Consumer<FeatureType> {
@@ -276,17 +274,16 @@ class ProgramEventDetailActivity :
     }
 
     override fun setWritePermission(canWrite: Boolean) {
-        when (binding.addEventButton.visibility) {
-            View.VISIBLE ->
-                binding.addEventButton.visibility =
-                    if (canWrite) View.VISIBLE else View.GONE
-            View.GONE -> binding.addEventButton.visibility = View.GONE
+        binding.addEventButton.visibility = when {
+            binding.addEventButton.visibility == View.VISIBLE && canWrite -> View.VISIBLE
+            else -> View.GONE
         }
-        if (binding.addEventButton.visibility == View.VISIBLE) {
-            binding.emptyTeis.setText(R.string.empty_tei_add)
-        } else {
-            binding.emptyTeis.setText(R.string.empty_tei_no_add)
-        }
+        binding.emptyTeis.setText(
+            when {
+                binding.addEventButton.visibility == View.VISIBLE -> R.string.empty_tei_add
+                else -> R.string.empty_tei_no_add
+            }
+        )
     }
 
     override fun setTutorial() {
@@ -295,7 +292,7 @@ class ProgramEventDetailActivity :
                 val stepConditions = SparseBooleanArray()
                 stepConditions.put(
                     2,
-                    findViewById<View>(R.id.addEventButton).visibility == View.VISIBLE
+                    binding.addEventButton.visibility == View.VISIBLE
                 )
                 HelpManager.getInstance().show(
                     activity, HelpManager.TutorialName.PROGRAM_EVENT_LIST,
@@ -314,22 +311,19 @@ class ProgramEventDetailActivity :
     override fun setCatOptionComboFilter(
         categoryOptionCombos: Pair<CategoryCombo, List<CategoryOptionCombo>>
     ) {
-        filtersAdapter!!.addCatOptCombFilter(categoryOptionCombos)
+        filtersAdapter.addCatOptCombFilter(categoryOptionCombos)
     }
 
-    override fun showPeriodRequest(periodRequest: FilterManager.PeriodRequest) {
+    override fun showPeriodRequest(periodRequest: FilterManager.PeriodRequest) =
         if (periodRequest == FilterManager.PeriodRequest.FROM_TO) {
-            DateUtils.getInstance().showFromToSelector(
-                this,
-                DateUtils.OnFromToSelector { filterManager.addPeriod(it) }
-            )
+            DateUtils.getInstance().showFromToSelector(this, filterManager::addPeriod)
         } else {
             DateUtils.getInstance().showPeriodDialog(
-                this, { datePeriods -> filterManager.addPeriod(datePeriods) },
+                this,
+                filterManager::addPeriod,
                 true
             )
         }
-    }
 
     override fun openOrgUnitTreeSelector() {
         val ouTreeIntent = Intent(this, OUTreeActivity::class.java)
@@ -340,7 +334,7 @@ class ProgramEventDetailActivity :
 
     public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (requestCode == FilterManager.OU_TREE && resultCode == Activity.RESULT_OK) {
-            filtersAdapter!!.notifyDataSetChanged()
+            filtersAdapter.notifyDataSetChanged()
             updateFilters(filterManager.totalFilters)
         }
         super.onActivityResult(requestCode, resultCode, data)
@@ -351,97 +345,106 @@ class ProgramEventDetailActivity :
     }
 
     override fun setMap(): Consumer<kotlin.Pair<FeatureCollection, BoundingBox>> {
-        return Consumer { data ->
-            if (map == null) {
-                binding.mapView.getMapAsync { mapboxMap ->
-                    map = mapboxMap
-                    if (map!!.style == null)
-                        map!!.setStyle(
-                            Style.MAPBOX_STREETS
-                        ) { style ->
-
-                            map!!.addOnMapClickListener(this)
-                            // TODO: GET STAGE ICON
-                            style.addImage(
-                                "ICON_ID",
-                                BitmapFactory.decodeResource(
-                                    resources,
-                                    R.drawable.mapbox_marker_icon_default
-                                )
-                            )
-                            setSource(style, data.component1())
-                            setLayer(style)
-
-                            initCameraPosition(data.component2())
-
-                            markerViewManager = MarkerViewManager(binding.mapView, map)
-                            symbolManager = SymbolManager(
-                                binding.mapView, map!!, style, null,
-                                GeoJsonOptions().withTolerance(0.4f)
-                            )
-
-                            symbolManager!!.iconAllowOverlap = true
-                            symbolManager!!.textAllowOverlap = true
-                            symbolManager!!.create(data.component1())
-                        }
-                    else {
-                        (mapboxMap.style!!.getSource("events") as GeoJsonSource).setGeoJson(data.component1())
-                        initCameraPosition(data.component2())
+        return Consumer { (featureCollection, boundingBox) ->
+            map?.let {
+                (it.style?.getSource(EVENTS) as GeoJsonSource).setGeoJson(featureCollection)
+                initCameraPosition(boundingBox)
+            } ?: binding.mapView.getMapAsync { mapBoxMap ->
+                mapBoxMap.style?.let {
+                    (mapBoxMap.style?.getSource(EVENTS) as GeoJsonSource)
+                        .setGeoJson(featureCollection)
+                    initCameraPosition(boundingBox)
+                } ?: mapBoxMap.setStyle(Style.MAPBOX_STREETS) { style ->
+                    mapBoxMap.addOnMapClickListener(this)
+                    // TODO: GET STAGE ICON
+                    style.addImage(
+                        ICON_ID,
+                        BitmapFactory.decodeResource(
+                            resources,
+                            R.drawable.mapbox_marker_icon_default
+                        )
+                    )
+                    setSource(style, featureCollection)
+                    setLayer(style)
+                    initCameraPosition(boundingBox)
+                    markerViewManager = MarkerViewManager(binding.mapView, mapBoxMap)
+                    symbolManager = SymbolManager(
+                        binding.mapView, mapBoxMap, style, null,
+                        GeoJsonOptions().withTolerance(0.4f)
+                    ).also {
+                        it.iconAllowOverlap = true
+                        it.textAllowOverlap = true
+                        it.create(featureCollection)
                     }
                 }
-            } else {
-                (map!!.style!!.getSource("events") as GeoJsonSource).setGeoJson(data.component1())
-                initCameraPosition(data.component2())
+                map = mapBoxMap
             }
         }
     }
 
-    private fun initCameraPosition(bbox: BoundingBox) {
-        val bounds = LatLngBounds.from(bbox.north(), bbox.east(), bbox.south(), bbox.west())
-        map!!.easeCamera(CameraUpdateFactory.newLatLngBounds(bounds, 50), 1200)
+    private fun initCameraPosition(boundingBox: BoundingBox) {
+        val bounds = LatLngBounds.from(
+            boundingBox.north(),
+            boundingBox.east(),
+            boundingBox.south(),
+            boundingBox.west()
+        )
+        map?.easeCamera(CameraUpdateFactory.newLatLngBounds(bounds, 50), 1200)
     }
 
     private fun setSource(style: Style, featureCollection: FeatureCollection) {
-        style.addSource(GeoJsonSource("events", featureCollection))
+        style.addSource(GeoJsonSource(EVENTS, featureCollection))
     }
 
-    override fun setEventInfo(eventInfo: Pair<ProgramEventViewModel, LatLng>) {
-        if (currentMarker != null) {
-            markerViewManager!!.removeMarker(currentMarker!!)
+    override fun setEventInfo(programEventViewModel: Pair<ProgramEventViewModel, LatLng>) {
+        currentMarker?.let {
+            markerViewManager?.removeMarker(it)
             markerViewManager = null
         }
         val binding = InfoWindowEventBinding.inflate(LayoutInflater.from(this))
-        binding.event = eventInfo.val0()
-        binding.presenter = presenter
-        val view = binding.root
-        view.setOnClickListener { viewClicked ->
-            markerViewManager!!.removeMarker(currentMarker!!)
-            markerViewManager = null
+        binding.run {
+            event = programEventViewModel.val0()
+            presenter = this@ProgramEventDetailActivity.presenter
         }
-        view.setOnLongClickListener { view1 ->
-            presenter.onEventClick(eventInfo.val0().uid(), eventInfo.val0().orgUnitUid())
-            true
+        binding.root.run {
+            setOnClickListener {
+                currentMarker?.let {
+                    markerViewManager?.removeMarker(it)
+                    markerViewManager = null
+                }
+            }
+            setOnLongClickListener {
+                presenter.onEventClick(
+                    programEventViewModel.val0().uid(),
+                    programEventViewModel.val0().orgUnitUid()
+                )
+                true
+            }
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
         }
-        view.layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.WRAP_CONTENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-        currentMarker = MarkerView(eventInfo.val1(), view)
-        markerViewManager!!.addMarker(currentMarker!!)
+        currentMarker = MarkerView(
+            programEventViewModel.val1(),
+            binding.root
+        ).also {
+            markerViewManager?.addMarker(it)
+        }
     }
 
     private fun setLayer(style: Style) {
-        val symbolLayer = SymbolLayer("POINT_LAYER", "events").withProperties(
-            PropertyFactory.iconImage("ICON_ID"),
+        val symbolLayer = SymbolLayer(POINT_LAYER_ID, EVENTS).withProperties(
+            PropertyFactory.iconImage(ICON_ID),
             iconAllowOverlap(true),
             iconOffset(arrayOf(0f, -9f))
         )
         symbolLayer.minZoom = 0f
         style.addLayer(symbolLayer)
 
-        if (featureType != FeatureType.POINT)
+        if (featureType != FeatureType.POINT) {
             style.addLayerBelow(
-                FillLayer("POLYGON_LAYER", "events").withProperties(
+                FillLayer(POLYGON_LAYER_ID, EVENTS).withProperties(
                     fillColor(
                         ColorUtils.getPrimaryColorWithAlpha(
                             this,
@@ -452,6 +455,7 @@ class ProgramEventDetailActivity :
                 ),
                 "settlement-label"
             )
+        }
     }
 
     override fun showMoreOptions(view: View) {
@@ -479,13 +483,11 @@ class ProgramEventDetailActivity :
         popupMenu.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.showHelp -> {
-                    analyticsHelper().setEvent(SHOW_HELP, CLICK, SHOW_HELP)
+                    analyticsHelper.setEvent(SHOW_HELP, CLICK, SHOW_HELP)
                     showTutorial(false)
                 }
                 R.id.menu_list -> showMap(false)
                 R.id.menu_map -> showMap(true)
-                else -> {
-                }
             }
             false
         }
@@ -494,8 +496,9 @@ class ProgramEventDetailActivity :
         val emptyVisible = !mapVisible && !listVisible
         popupMenu.menu.getItem(0).isVisible =
             !emptyVisible && !mapVisible && featureType != FeatureType.NONE
-        popupMenu.menu.getItem(1).isVisible =
-            !emptyVisible && binding.recycler.visibility == View.GONE && featureType != FeatureType.NONE
+        popupMenu.menu.getItem(1).isVisible = !emptyVisible &&
+            binding.recycler.visibility == View.GONE &&
+            featureType != FeatureType.NONE
         popupMenu.show()
     }
 
@@ -515,45 +518,41 @@ class ProgramEventDetailActivity :
     }
 
     override fun navigateToEvent(eventId: String, orgUnit: String) {
-        val bundle = Bundle()
-        bundle.putString(PROGRAM_UID, programUid)
-        bundle.putString(Constants.EVENT_UID, eventId)
-        bundle.putString(ORG_UNIT, orgUnit)
-        startActivity(
-            EventCaptureActivity::class.java,
-            EventCaptureActivity.getActivityBundle(eventId, programUid!!),
-            false, false, null
-        )
+        val bundle = Bundle().also {
+            it.putString(PROGRAM_UID, programUid)
+            it.putString(Constants.EVENT_UID, eventId)
+            it.putString(ORG_UNIT, orgUnit)
+        }
+        startActivity(EventCaptureActivity::class.java, bundle, false, false, null)
     }
 
     private fun showMap(showMap: Boolean) {
         binding.recycler.visibility = if (showMap) View.GONE else View.VISIBLE
         binding.mapView.visibility = if (showMap) View.VISIBLE else View.GONE
 
-        if (showMap)
+        if (showMap) {
             presenter.getMapData()
+        }
     }
 
     override fun onMapClick(point: LatLng): Boolean {
         val pointf = map!!.projection.toScreenLocation(point)
         val rectF = RectF(pointf.x - 10, pointf.y - 10, pointf.x + 10, pointf.y + 10)
-        val features = map!!.queryRenderedFeatures(
+        val features = map?.queryRenderedFeatures(
             rectF,
-            if (featureType == FeatureType.POINT) "POINT_LAYER" else "POLYGON_LAYER"
+            if (featureType == FeatureType.POINT) POINT_LAYER_ID else POLYGON_LAYER_ID
         )
-        if (!features.isEmpty()) {
-            for (feature in features) {
-                presenter.getEventInfo(feature.getStringProperty("eventUid"), point)
-            }
-            return true
-        }
-
-        return false
+        features?.forEach { feature ->
+            presenter.getEventInfo(feature.getStringProperty("eventUid"), point)
+        } ?: return false
+        return true
     }
 
     companion object {
 
-        val EXTRA_PROGRAM_UID = "PROGRAM_UID"
+        const val ICON_ID = "ICON_ID"
+        const val EXTRA_PROGRAM_UID = "PROGRAM_UID"
+        const val EVENTS = "events"
 
         fun getBundle(programUid: String): Bundle {
             val bundle = Bundle()

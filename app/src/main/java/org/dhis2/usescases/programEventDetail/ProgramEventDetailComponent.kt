@@ -28,48 +28,11 @@
 
 package org.dhis2.usescases.programEventDetail
 
-import com.squareup.sqlbrite2.BriteDatabase
-import dagger.Module
-import dagger.Provides
+import dagger.Subcomponent
 import org.dhis2.data.dagger.PerActivity
-import org.dhis2.data.schedulers.SchedulerProvider
-import org.dhis2.utils.filters.FilterManager
-import org.hisp.dhis.android.core.D2
 
 @PerActivity
-@Module
-class ProgramEventDetailModule(
-    private val view: ProgramEventDetailView,
-    private val programUid: String
-) {
-
-    @Provides
-    @PerActivity
-    internal fun provideView(activity: ProgramEventDetailActivity): ProgramEventDetailView {
-        return activity
-    }
-
-    @Provides
-    @PerActivity
-    internal fun providesPresenter(
-        programEventDetailRepository: ProgramEventDetailRepository,
-        schedulerProvider: SchedulerProvider,
-        filterManager: FilterManager
-    ): ProgramEventDetailPresenter {
-        return ProgramEventDetailPresenter(
-            view,
-            programEventDetailRepository,
-            schedulerProvider,
-            filterManager
-        )
-    }
-
-    @Provides
-    @PerActivity
-    internal fun eventDetailRepository(
-        briteDatabase: BriteDatabase,
-        d2: D2
-    ): ProgramEventDetailRepository {
-        return ProgramEventDetailRepositoryImpl(programUid, briteDatabase, d2)
-    }
+@Subcomponent(modules = [ProgramEventDetailModule::class])
+interface ProgramEventDetailComponent {
+    fun inject(activity: ProgramEventDetailActivity)
 }
