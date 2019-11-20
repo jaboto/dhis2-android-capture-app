@@ -218,7 +218,7 @@ class ProgramEventDetailPresenter(
     }
 
     fun clearFilterClick() {
-        FilterManager.getInstance().clearAllFilters()
+        filterManager.clearAllFilters()
         view.clearFilters()
     }
 }
