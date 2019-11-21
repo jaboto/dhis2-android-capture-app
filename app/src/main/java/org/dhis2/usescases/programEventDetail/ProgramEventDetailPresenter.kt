@@ -9,7 +9,6 @@ import io.reactivex.processors.PublishProcessor
 import org.dhis2.data.schedulers.SchedulerProvider
 import org.dhis2.data.tuples.Pair
 import org.dhis2.utils.filters.FilterManager
-import org.hisp.dhis.android.core.common.Unit
 import timber.log.Timber
 
 class ProgramEventDetailPresenter(
@@ -22,9 +21,9 @@ class ProgramEventDetailPresenter(
     var compositeDisposable = CompositeDisposable()
 
     // Search fields
-    private val eventInfoProcessor: FlowableProcessor<Pair<String, LatLng>> =
+    val eventInfoProcessor: FlowableProcessor<Pair<String, LatLng>> =
         PublishProcessor.create()
-    private val mapProcessor: FlowableProcessor<Unit> =
+    val mapProcessor: FlowableProcessor<Unit> =
         PublishProcessor.create()
 
     fun init() {
@@ -116,8 +115,8 @@ class ProgramEventDetailPresenter(
                 .subscribeOn(schedulerProvider.computation())
                 .observeOn(schedulerProvider.ui())
                 .subscribe(
-                    view.setMap(),
-                    Consumer { Timber.e(it) }
+                    { view.setMap() },
+                    Timber::e
                 )
         )
 
@@ -139,7 +138,7 @@ class ProgramEventDetailPresenter(
             filterManager.ouTreeFlowable()
                 .doOnNext {
                     if (view.isMapVisible) {
-                        mapProcessor.onNext(Unit())
+                        mapProcessor.onNext(Unit)
                     }
                 }
                 .subscribeOn(schedulerProvider.io())
@@ -154,7 +153,7 @@ class ProgramEventDetailPresenter(
             filterManager.asFlowable()
                 .doOnNext {
                     if (view.isMapVisible) {
-                        mapProcessor.onNext(Unit())
+                        mapProcessor.onNext(Unit)
                     }
                 }
                 .subscribeOn(schedulerProvider.io())
@@ -169,7 +168,7 @@ class ProgramEventDetailPresenter(
             filterManager.periodRequest
                 .doOnNext {
                     if (view.isMapVisible) {
-                        mapProcessor.onNext(Unit())
+                        mapProcessor.onNext(Unit)
                     }
                 }
                 .subscribeOn(schedulerProvider.io())
@@ -190,7 +189,7 @@ class ProgramEventDetailPresenter(
     }
 
     fun getMapData() {
-        mapProcessor.onNext(Unit())
+        mapProcessor.onNext(Unit)
     }
 
     fun onEventClick(eventId: String, orgUnit: String) {
