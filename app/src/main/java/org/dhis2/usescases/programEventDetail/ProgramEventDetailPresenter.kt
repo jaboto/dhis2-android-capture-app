@@ -112,7 +112,7 @@ class ProgramEventDetailPresenter(
                             )
                         }
                 }
-                .subscribeOn(schedulerProvider.computation())
+                .subscribeOn(schedulerProvider.io())
                 .observeOn(schedulerProvider.ui())
                 .subscribe(
                     { view.setMap() },

@@ -18,19 +18,21 @@ import io.reactivex.processors.BehaviorProcessor
 import io.reactivex.processors.FlowableProcessor
 import io.reactivex.processors.PublishProcessor
 import io.reactivex.schedulers.TestScheduler
+import io.reactivex.subscribers.TestSubscriber
 import org.dhis2.data.schedulers.TestSchedulerProvider
+import org.dhis2.data.schedulers.TrampolineSchedulerProvider
 import org.dhis2.data.tuples.Pair
 import org.dhis2.utils.filters.FilterManager
 import org.hisp.dhis.android.core.category.CategoryCombo
 import org.hisp.dhis.android.core.category.CategoryOptionCombo
 import org.hisp.dhis.android.core.common.FeatureType
 import org.hisp.dhis.android.core.common.State
+import org.hisp.dhis.android.core.event.Event
 import org.hisp.dhis.android.core.event.EventStatus
 import org.hisp.dhis.android.core.program.Program
+import org.hisp.dhis.rules.models.RuleEvent
 import org.junit.Before
 import org.junit.Test
-import rx.Subscriber
-import rx.observers.TestSubscriber
 import java.util.Date
 
 class ProgramEventDetailPresenterTest {
@@ -49,10 +51,8 @@ class ProgramEventDetailPresenterTest {
 
     @Test
     fun `Should init screen`() {
-
         val program = Program.builder().uid("programUid").build()
         val catOptionComboPair = Pair.create(dummyCategoryCombo(), dummyListCatOptionCombo())
-        val eventUid = "eventUid"
         val programEventViewModel = ProgramEventViewModel.create(
             "uid",
             "orgUnitUid",
@@ -64,44 +64,35 @@ class ProgramEventDetailPresenterTest {
             true,
             "attr"
         )
-        val latLng = LatLng()
-        val events = MutableLiveData<PagedList<ProgramEventViewModel>>()
-            .also { it.value?.add(programEventViewModel) }
+        val events =
+            MutableLiveData<PagedList<ProgramEventViewModel>>().also { it.value?.add(programEventViewModel) }
         val mapEvents = Pair<FeatureCollection, BoundingBox>(
             FeatureCollection.fromFeature(Feature.fromGeometry(null)),
             BoundingBox.fromLngLats(0.0, 0.0,0.0,0.0)
         )
-
         whenever(repository.featureType()) doReturn Single.just(FeatureType.POINT)
         whenever(repository.accessDataWrite) doReturn true
         whenever(repository.hasAccessToAllCatOptions()) doReturn Single.just(true)
         whenever(repository.program()) doReturn Observable.just(program)
         whenever(repository.catOptionCombos()) doReturn Single.just(catOptionComboPair)
         whenever(
-            repository.getInfoForEvent(eventUid)
-        ) doReturn Flowable.just(programEventViewModel)
+            repository.filteredProgramEvents(any(), any(), any(), any(), any())
+        ) doReturn events
         whenever(
             repository.filteredEventsForMap(any(), any(), any(), any(), any())
         ) doReturn Flowable.just(mapEvents)
-        whenever(
-            repository.filteredProgramEvents(any(), any(), any(), any(), any())
-        ) doReturn events
-
+        val testSubscriber : TestSubscriber<Unit> = TestSubscriber()
+        presenter.mapProcessor.subscribe(testSubscriber)
+        testSubscriber.onNext(Unit)
         presenter.init()
-        presenter.getEventInfo(eventUid, latLng)
-        presenter.getMapData()
-        presenter.mapProcessor.test().onNext(Unit)
-
-        scheduler.io().triggerActions()
-
+        testSubscriber.onNext(Unit)
         verify(view).setFeatureType()
         verify(view).setWritePermission(true)
         verify(view).setOptionComboAccess(true)
         verify(view).setProgram(program)
         verify(view).setCatOptionComboFilter(catOptionComboPair)
-        verify(view).setEventInfo(Pair.create(programEventViewModel, latLng))
-        verify(view).setMap()
         verify(view).setLiveData(events)
+        verify(view).setMap()
     }
 
     @Test
