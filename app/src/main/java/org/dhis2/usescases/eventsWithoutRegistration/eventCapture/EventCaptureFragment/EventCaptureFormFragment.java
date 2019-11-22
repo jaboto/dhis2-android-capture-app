@@ -10,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.LinearLayout;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -180,9 +181,30 @@ public class EventCaptureFormFragment extends FragmentGlobalAbstract {
             if (!isEmpty(lastFocusItem))
                 dataEntryAdapter.setLastFocusItem(lastFocusItem);
 
-            Parcelable rvState = binding.formRecycler.getLayoutManager().onSaveInstanceState();
+
+         //   LinearLayoutManager myLayoutManager = (LinearLayoutManager) binding.formRecycler.getLayoutManager();
+         //   int myfirstItemVisible = myLayoutManager.findFirstVisibleItemPosition();
+
+        //    myLayoutManager.scrollToPosition(myfirstItemVisible);
+
+         //   Parcelable rvState = binding.formRecycler.getLayoutManager().onSaveInstanceState();
+
+
+            LinearLayoutManager myLayoutManager = (LinearLayoutManager) binding.formRecycler.getLayoutManager();
+            int myfirstItemVisible = myLayoutManager.findFirstVisibleItemPosition();
+
+            View myPositionView = myLayoutManager.findViewByPosition(myfirstItemVisible);
+            int visible = 0;
+            if (myPositionView != null){
+                visible = myPositionView.getTop();
+            }
+
             dataEntryAdapter.swap(updates);
-            binding.formRecycler.getLayoutManager().onRestoreInstanceState(rvState);
+            myLayoutManager.scrollToPositionWithOffset(myfirstItemVisible, visible);
+
+
+
+            //   binding.formRecycler.getLayoutManager().onRestoreInstanceState(rvState);
 
             int completedValues = 0;
             HashMap<String, Boolean> fields = new HashMap<>();
