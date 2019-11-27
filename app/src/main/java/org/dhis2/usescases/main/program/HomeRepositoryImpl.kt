@@ -35,7 +35,7 @@ internal class HomeRepositoryImpl(private val d2: D2, private val eventLabel: St
         )
             .runOn(Schedulers.io())
             .map { dataSet ->
-                var repo = d2.dataSetModule().dataSetInstances().byDataSetUid().eq(dataSet.uid())
+                var repo = d2.dataSetModule().dataSetInstanceSummaries().byDataSetUid().eq(dataSet.uid())
                 if (orgUnitFilter.isNotEmpty()) {
                     repo = repo.byOrganisationUnitUid().`in`(orgUnitFilter)
                 }
@@ -43,33 +43,19 @@ internal class HomeRepositoryImpl(private val d2: D2, private val eventLabel: St
                     repo = repo.byPeriodStartDate().inDatePeriods(dateFilter)
                 }
 
-                var count = 0
                 if (statesFilter.isNotEmpty()) {
-                    for (instance in repo.blockingGet()) {
-                        if (statesFilter.contains(instance.state())) {
-                            count++
-                        }
-                    }
-                } else {
-                    count = repo.blockingCount()
+                    repo = repo.byState().`in`(statesFilter)
                 }
 
-                val possibleStates = repo.blockingGet().map { it.state() }.toMutableList()
+                val summaryList = repo.blockingGet()
+                val summary = if (summaryList.size == 1) summaryList[0] else null
 
-                possibleStates.addAll(d2.dataSetModule().dataSetCompleteRegistrations()
-                    .byDataSetUid().eq(dataSet.uid())
-                    .blockingGet().map { it.state() })
-
-
-                val state = when {
-                    possibleStates.contains(State.ERROR) ||
-                            possibleStates.contains(State.WARNING) -> State.WARNING
-                    possibleStates.contains(State.SENT_VIA_SMS) ||
-                            possibleStates.contains(State.SYNCED_VIA_SMS) -> State.SENT_VIA_SMS
-                    possibleStates.contains(State.TO_UPDATE) ||
-                            possibleStates.contains(State.TO_POST) -> State.TO_UPDATE
-                    else -> State.SYNCED
-                }
+                val count = if (summary != null) summary.dataSetInstanceCount() else 0
+                val state =
+                        if (summary != null && summary.state() != null)
+                            summary.state()
+                        else
+                            State.SYNCED  //SYNCED as default?
 
                 ProgramViewModel.create(
                     dataSet.uid(),
@@ -82,7 +68,7 @@ internal class HomeRepositoryImpl(private val d2: D2, private val eventLabel: St
                     dataSet.displayDescription(),
                     true,
                     dataSet.access().data().write()!!,
-                    state.name
+                    state!!.name
                 )
             }.sequential().toList().toFlowable()
     }
