@@ -6,7 +6,6 @@ import io.reactivex.schedulers.Schedulers
 import org.hisp.dhis.android.core.D2
 import org.hisp.dhis.android.core.arch.helpers.UidsHelper
 import org.hisp.dhis.android.core.common.State
-import org.hisp.dhis.android.core.dataset.DataSet
 import org.hisp.dhis.android.core.dataset.DataSetCollectionRepository
 import org.hisp.dhis.android.core.enrollment.Enrollment
 import org.hisp.dhis.android.core.enrollment.EnrollmentStatus
@@ -30,25 +29,24 @@ internal class HomeRepositoryImpl(private val d2: D2, private val eventLabel: St
         orgUnitFilter: List<String>,
         statesFilter: List<State>
     ): Flowable<List<ProgramViewModel>> {
-        return ParallelFlowable.from<DataSet>(
-            Flowable.fromIterable<DataSet>(dataSetRepository.blockingGet())
-        )
-            .runOn(Schedulers.io())
-            .map { dataSet ->
-                var repo = d2.dataSetModule().dataSetInstanceSummaries().byDataSetUid().eq(dataSet.uid())
-                if (orgUnitFilter.isNotEmpty()) {
-                    repo = repo.byOrganisationUnitUid().`in`(orgUnitFilter)
-                }
-                if (dateFilter.isNotEmpty()) {
-                    repo = repo.byPeriodStartDate().inDatePeriods(dateFilter)
-                }
+        return dataSetRepository.get().map { datasetList ->
+            var repo = d2.dataSetModule().dataSetInstanceSummaries()
 
-                if (statesFilter.isNotEmpty()) {
-                    repo = repo.byState().`in`(statesFilter)
-                }
+            if (orgUnitFilter.isNotEmpty()) {
+                repo = repo.byOrganisationUnitUid().`in`(orgUnitFilter)
+            }
+            if (dateFilter.isNotEmpty()) {
+                repo = repo.byPeriodStartDate().inDatePeriods(dateFilter)
+            }
 
-                val summaryList = repo.blockingGet()
-                val summary = if (summaryList.size == 1) summaryList[0] else null
+            if (statesFilter.isNotEmpty()) {
+                repo = repo.byState().`in`(statesFilter)
+            }
+
+            val summaryList = repo.blockingGet()
+
+            val viewList = datasetList.map { dataSet ->
+                val summary = summaryList.find { s -> s.dataSetUid() == dataSet.uid() }
 
                 val count = if (summary != null) summary.dataSetInstanceCount() else 0
                 val state =
@@ -58,19 +56,22 @@ internal class HomeRepositoryImpl(private val d2: D2, private val eventLabel: St
                             State.SYNCED  //SYNCED as default?
 
                 ProgramViewModel.create(
-                    dataSet.uid(),
-                    dataSet.displayName()!!,
-                    if (dataSet.style() != null) dataSet.style()!!.color() else null,
-                    if (dataSet.style() != null) dataSet.style()!!.icon() else null,
-                    count, null,
-                    "DataSets",
-                    "",
-                    dataSet.displayDescription(),
-                    true,
-                    dataSet.access().data().write()!!,
-                    state!!.name
+                        dataSet.uid(),
+                        dataSet.displayName()!!,
+                        if (dataSet.style() != null) dataSet.style()!!.color() else null,
+                        if (dataSet.style() != null) dataSet.style()!!.icon() else null,
+                        count, null,
+                        "DataSets",
+                        "",
+                        dataSet.displayDescription(),
+                        true,
+                        dataSet.access().data().write()!!,
+                        state!!.name
                 )
-            }.sequential().toList().toFlowable()
+            }
+
+            viewList
+        }.toFlowable()
     }
 
     override fun programModels(
