@@ -4,7 +4,6 @@ import io.reactivex.Flowable
 import io.reactivex.parallel.ParallelFlowable
 import io.reactivex.schedulers.Schedulers
 import org.hisp.dhis.android.core.D2
-import org.hisp.dhis.android.core.arch.helpers.UidsHelper
 import org.hisp.dhis.android.core.common.State
 import org.hisp.dhis.android.core.dataset.DataSetCollectionRepository
 import org.hisp.dhis.android.core.enrollment.Enrollment
@@ -21,8 +20,6 @@ internal class HomeRepositoryImpl(private val d2: D2, private val eventLabel: St
         .withDataSetElements()
     private val programRepository: ProgramCollectionRepository = d2.programModule().programs()
         .withTrackedEntityType()
-
-    private var captureOrgUnits: List<String> = ArrayList()
 
     override fun aggregatesModels(
         dateFilter: List<DatePeriod>,
@@ -79,20 +76,10 @@ internal class HomeRepositoryImpl(private val d2: D2, private val eventLabel: St
         orgUnitFilter: List<String>,
         statesFilter: List<State>
     ): Flowable<List<ProgramViewModel>> {
-        return getCaptureOrgUnits()
-            .map { captureOrgUnits ->
-                this.captureOrgUnits = captureOrgUnits
-                if (orgUnitFilter.isNotEmpty()) {
-                    programRepository.byOrganisationUnitList(orgUnitFilter)
-                } else {
-                    programRepository.byOrganisationUnitList(captureOrgUnits)
-                }
-            }
-            .flatMap { programRepo ->
-                ParallelFlowable.from(Flowable.fromIterable(programRepo.blockingGet()))
-                    .runOn(Schedulers.io())
-                    .sequential()
-            }
+        println("!!!START program")
+        return ParallelFlowable.from(Flowable.fromIterable(getPrograms(orgUnitFilter).blockingGet()))
+            .runOn(Schedulers.io())
+            .sequential()
             .map { program ->
                 var typeName: String?
                 if (program.programType() == WITH_REGISTRATION) {
@@ -331,18 +318,15 @@ internal class HomeRepositoryImpl(private val d2: D2, private val eventLabel: St
             }.toList().toFlowable()
     }
 
-    private fun getCaptureOrgUnits(): Flowable<List<String>> {
-        return if (captureOrgUnits.isNotEmpty()) {
-            Flowable.just(captureOrgUnits)
+
+    private fun getPrograms(orgUnitFilter: List<String>): ProgramCollectionRepository {
+        return if (orgUnitFilter.isNotEmpty()) {
+            programRepository.byOrganisationUnitList(orgUnitFilter)
         } else {
-            d2.organisationUnitModule()
-                .organisationUnits()
-                .byOrganisationUnitScope(OrganisationUnit.Scope.SCOPE_DATA_CAPTURE)
-                .get()
-                .toFlowable()
-                .map { UidsHelper.getUidsList(it) }
+            programRepository.byOrganisationUnitScope(OrganisationUnit.Scope.SCOPE_DATA_CAPTURE)
         }
     }
+
 
     private fun countEnrollment(enrollments: List<Enrollment>): Int {
         val teiUids = ArrayList<String>()
