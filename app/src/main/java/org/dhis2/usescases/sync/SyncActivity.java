@@ -1,3 +1,31 @@
+/*
+* Copyright (c) 2004-2019, University of Oslo
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+* Redistributions of source code must retain the above copyright notice, this
+* list of conditions and the following disclaimer.
+*
+* Redistributions in binary form must reproduce the above copyright notice,
+* this list of conditions and the following disclaimer in the documentation
+* and/or other materials provided with the distribution.
+* Neither the name of the HISP project nor the names of its contributors may
+* be used to endorse or promote products derived from this software without
+* specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+* ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 package org.dhis2.usescases.sync;
 
 import android.animation.ArgbEvaluator;
@@ -20,6 +48,7 @@ import org.dhis2.App;
 import org.dhis2.Bindings.Bindings;
 import org.dhis2.R;
 import org.dhis2.data.prefs.Preference;
+import org.dhis2.data.prefs.PreferenceProvider;
 import org.dhis2.data.service.workManager.WorkManagerController;
 import org.dhis2.databinding.ActivitySynchronizationBinding;
 import org.dhis2.usescases.general.ActivityGlobalAbstract;
@@ -30,23 +59,25 @@ import org.dhis2.utils.Constants;
 import javax.inject.Inject;
 
 
-public class SyncActivity extends ActivityGlobalAbstract implements SyncContracts.View {
+public class SyncActivity extends ActivityGlobalAbstract implements SyncView {
 
     ActivitySynchronizationBinding binding;
 
     @Inject
-    SyncContracts.Presenter presenter;
+    SyncPresenter presenter;
 
     @Inject
     WorkManagerController workManagerController;
 
+    @Inject
+    PreferenceProvider preferenceProvider;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        ((App) getApplicationContext()).userComponent().plus(new SyncModule()).inject(this);
+        ((App) getApplicationContext()).userComponent().plus(new SyncModule(this)).inject(this);
         super.onCreate(savedInstanceState);
         binding = DataBindingUtil.setContentView(this, R.layout.activity_synchronization);
         binding.setPresenter(presenter);
-        presenter.init(this);
         presenter.sync();
     }
 
@@ -88,8 +119,6 @@ public class SyncActivity extends ActivityGlobalAbstract implements SyncContract
             case SUCCEEDED:
                 binding.eventsText.setText(getString(R.string.data_ready));
                 Bindings.setDrawableEnd(binding.eventsText, AppCompatResources.getDrawable(this, R.drawable.animator_done));
-                /*presenter.scheduleSync(getSharedPreferences().getInt(Constants.TIME_META, Constants.TIME_DAILY),
-                        getSharedPreferences().getInt(Constants.TIME_DATA, Constants.TIME_15M));*/
                 presenter.syncReservedValues();
                 startMain();
                 break;
@@ -120,11 +149,22 @@ public class SyncActivity extends ActivityGlobalAbstract implements SyncContract
     }
 
     @Override
-    public void saveTheme(Integer themeId) {
-        SharedPreferences prefs = getAbstracContext().getSharedPreferences(
-                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
-        prefs.edit().putInt(Constants.THEME, themeId).apply();
-        setTheme(themeId);
+    public void saveTheme(String themeColor) {
+
+        int style;
+
+        if(themeColor.contains("green")){
+            style = R.style.GreenTheme;
+        } else if (themeColor.contains("india")) {
+            style = R.style.OrangeTheme;
+        } else if (themeColor.contains("myanmar")) {
+            style = R.style.RedTheme;
+        } else {
+            style = R.style.AppTheme;
+        }
+
+        preferenceProvider.setValue(Preference.THEME, style);
+        setTheme(style);
 
         int startColor = ColorUtils.getPrimaryColor(this, ColorUtils.ColorType.PRIMARY);
         TypedValue typedValue = new TypedValue();
@@ -140,12 +180,10 @@ public class SyncActivity extends ActivityGlobalAbstract implements SyncContract
     }
 
     @Override
-    public void saveFlag(String s) {
-        SharedPreferences prefs = getAbstracContext().getSharedPreferences(
-                Constants.SHARE_PREFS, Context.MODE_PRIVATE);
-        prefs.edit().putString("FLAG", s).apply();
+    public void saveFlag(String flag) {
+       preferenceProvider.setValue(Preference.FLAG, flag);
 
-        binding.logoFlag.setImageResource(getResources().getIdentifier(s, "drawable", getPackageName()));
+        binding.logoFlag.setImageResource(getResources().getIdentifier(flag, "drawable", getPackageName()));
         ValueAnimator alphaAnimator = ValueAnimator.ofFloat(0f, 1f);
         alphaAnimator.setDuration(2000);
         alphaAnimator.addUpdateListener(animation -> {
@@ -158,7 +196,7 @@ public class SyncActivity extends ActivityGlobalAbstract implements SyncContract
 
 
     public void startMain() {
-        getSharedPreferences().edit().putBoolean(Preference.INITIAL_SYNC_DONE, true).apply();
+        preferenceProvider.setValue(Preference.INITIAL_SYNC_DONE, true);
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);

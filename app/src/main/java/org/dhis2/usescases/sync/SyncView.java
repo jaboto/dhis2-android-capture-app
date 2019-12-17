@@ -28,27 +28,11 @@
 
 package org.dhis2.usescases.sync;
 
-import org.dhis2.data.dagger.PerActivity;
-import org.dhis2.data.schedulers.SchedulerProvider;
-import org.dhis2.data.service.workManager.WorkManagerController;
-import org.hisp.dhis.android.core.D2;
+import org.dhis2.usescases.general.AbstractActivityContracts;
 
-import dagger.Module;
-import dagger.Provides;
+interface SyncView extends AbstractActivityContracts.View{
 
-@Module
-@PerActivity
-public class SyncModule {
+        void saveTheme(String themeColor);
 
-    private SyncView view;
-
-    SyncModule(SyncView view) {
-        this.view = view;
-    }
-
-    @Provides
-    @PerActivity
-    SyncPresenter providePresenter(D2 d2, SchedulerProvider schedulerProvider, WorkManagerController workManagerController) {
-        return new SyncPresenter(view, d2, schedulerProvider, workManagerController);
-    }
+        void saveFlag(String flag);
 }

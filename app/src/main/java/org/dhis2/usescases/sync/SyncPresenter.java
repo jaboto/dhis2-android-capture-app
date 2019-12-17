@@ -1,3 +1,31 @@
+/*
+* Copyright (c) 2004-2019, University of Oslo
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+* Redistributions of source code must retain the above copyright notice, this
+* list of conditions and the following disclaimer.
+*
+* Redistributions in binary form must reproduce the above copyright notice,
+* this list of conditions and the following disclaimer in the documentation
+* and/or other materials provided with the distribution.
+* Neither the name of the HISP project nor the names of its contributors may
+* be used to endorse or promote products derived from this software without
+* specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+* ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
 package org.dhis2.usescases.sync;
 
 import org.dhis2.R;
@@ -13,35 +41,28 @@ import org.hisp.dhis.android.core.settings.SystemSetting;
 import io.reactivex.disposables.CompositeDisposable;
 import timber.log.Timber;
 
-public class SyncPresenter implements SyncContracts.Presenter {
+public class SyncPresenter {
 
     private final D2 d2;
     private final SchedulerProvider schedulerProvider;
     private WorkManagerController workManagerController;
-    private SyncContracts.View view;
+    private SyncView view;
 
-    private CompositeDisposable disposable;
+    CompositeDisposable disposable;
 
-    SyncPresenter(D2 d2, SchedulerProvider schedulerProvider, WorkManagerController workManagerController) {
+    SyncPresenter(SyncView view, D2 d2, SchedulerProvider schedulerProvider, WorkManagerController workManagerController) {
         this.d2 = d2;
         this.schedulerProvider = schedulerProvider;
         this.workManagerController = workManagerController;
-    }
-
-    @Override
-    public void init(SyncContracts.View view) {
         this.view = view;
         this.disposable = new CompositeDisposable();
-
     }
 
-    @Override
     public void sync() {
         workManagerController
                 .syncDataForWorkers(Constants.META_NOW, Constants.DATA_NOW, Constants.INITIAL_SYNC);
     }
 
-    @Override
     public void getTheme() {
         disposable.add(
                 d2.systemSettingModule().systemSetting().get()
@@ -54,14 +75,7 @@ public class SyncPresenter implements SyncContracts.Presenter {
                                 else
                                     flag = setting.value();
                             }
-                            if (style.contains("green"))
-                                return Pair.create(flag, R.style.GreenTheme);
-                            if (style.contains("india"))
-                                return Pair.create(flag, R.style.OrangeTheme);
-                            if (style.contains("myanmar"))
-                                return Pair.create(flag, R.style.RedTheme);
-                            else
-                                return Pair.create(flag, R.style.AppTheme);
+                            return Pair.create(flag,style);
                         })
                         .subscribeOn(schedulerProvider.io())
                         .observeOn(schedulerProvider.ui())
@@ -72,19 +86,16 @@ public class SyncPresenter implements SyncContracts.Presenter {
                         ));
     }
 
-    @Override
     public void syncReservedValues() {
         WorkerItem workerItem = new WorkerItem(Constants.RESERVED, WorkerType.RESERVED, null, null, null, null);
         workManagerController.cancelAllWorkByTag(workerItem.getWorkerName());
         workManagerController.syncDataForWorker(workerItem);
     }
 
-    @Override
     public void onDettach() {
         disposable.clear();
     }
 
-    @Override
     public void displayMessage(String message) {
         view.displayMessage(message);
     }
