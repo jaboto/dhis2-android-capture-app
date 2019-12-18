@@ -66,7 +66,7 @@ class JiraViewModel : ViewModel(), JiraActions {
         }
     }
 
-    private interface JiraIssueService {
+    public interface JiraIssueService {
         @POST("rest/api/2/issue")
         fun createIssue(
             @Header("Authorization")
