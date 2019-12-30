@@ -77,11 +77,11 @@ public class EventInitialContract {
 
         EventCreationType eventcreateionType();
 
-
+        void displayEventAlert();
     }
 
     public interface Presenter extends AbstractActivityContracts.Presenter {
-        void init(EventInitialContract.View view, String programId, String eventId, String orgUnitId, String programStageId);
+        void init(String programId, String eventId, String orgUnitId, String programStageId);
 
         void getProgramStage(String programStageUid);
 
@@ -117,7 +117,7 @@ public class EventInitialContract {
 
         List<OrganisationUnit> getOrgUnits();
 
-        void onShareClick(android.view.View mView);
+        void onShareClick();
 
         void deleteEvent(String trackedEntityInstance);
 

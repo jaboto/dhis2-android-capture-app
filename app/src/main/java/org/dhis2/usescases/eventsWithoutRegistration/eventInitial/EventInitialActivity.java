@@ -187,7 +187,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         enrollmentStatus = (EnrollmentStatus) getIntent().getSerializableExtra(Constants.ENROLLMENT_STATUS);
         eventScheduleInterval = getIntent().getIntExtra(Constants.EVENT_SCHEDULE_INTERVAL, 0);
         setScreenName(this.getLocalClassName());
-        ((App) getApplicationContext()).userComponent().plus(new EventInitialModule(eventUid)).inject(this);
+        ((App) getApplicationContext()).userComponent().plus(new EventInitialModule(this, eventUid)).inject(this);
         super.onCreate(savedInstanceState);
 
         disposable = new CompositeDisposable();
@@ -263,7 +263,7 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
         }
 
         binding.actionButton.setEnabled(true);
-        presenter.init(this, programUid, eventUid, selectedOrgUnit, programStageUid);
+        presenter.init( programUid, eventUid, selectedOrgUnit, programStageUid);
     }
 
     private void setUpScrenByCreatinType(EventCreationType eventCreationType) {
@@ -805,6 +805,11 @@ public class EventInitialActivity extends ActivityGlobalAbstract implements Even
     @Override
     public EventCreationType eventcreateionType() {
         return eventCreationType;
+    }
+
+    @Override
+    public void displayEventAlert() {
+        displayMessage(getString(R.string.delete_event_error));
     }
 
     @Override

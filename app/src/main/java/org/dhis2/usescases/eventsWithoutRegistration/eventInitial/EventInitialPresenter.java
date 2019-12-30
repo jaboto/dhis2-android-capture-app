@@ -20,6 +20,7 @@ import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryRe
 import org.dhis2.utils.DateUtils;
 import org.dhis2.utils.EventCreationType;
 import org.dhis2.utils.Result;
+import org.dhis2.utils.analytics.AnalyticsHelper;
 import org.hisp.dhis.android.core.arch.helpers.UidsHelper;
 import org.hisp.dhis.android.core.category.CategoryCombo;
 import org.hisp.dhis.android.core.category.CategoryOption;
@@ -45,6 +46,7 @@ import android.view.View;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import androidx.core.app.ActivityCompat;
 
 import io.reactivex.BackpressureStrategy;
@@ -73,7 +75,7 @@ public class EventInitialPresenter
 
     private FusedLocationProviderClient mFusedLocationClient;
 
-    private String eventId;
+    public String eventId;
 
     private CompositeDisposable compositeDisposable;
 
@@ -87,23 +89,26 @@ public class EventInitialPresenter
 
     private String programId;
 
-    public EventInitialPresenter(@NonNull EventSummaryRepository eventSummaryRepository,
-                                 @NonNull EventInitialRepository eventInitialRepository, @NonNull SchedulerProvider schedulerProvider) {
+    private final AnalyticsHelper analyticsHelper;
 
+
+    public EventInitialPresenter(EventInitialContract.View view, @NonNull EventSummaryRepository eventSummaryRepository,
+                                 @NonNull EventInitialRepository eventInitialRepository, @NonNull SchedulerProvider schedulerProvider, AnalyticsHelper analyticsHelper) {
+
+        this.view = view;
         this.eventInitialRepository = eventInitialRepository;
         this.eventSummaryRepository = eventSummaryRepository;
         this.schedulerProvider = schedulerProvider;
+        this.analyticsHelper = analyticsHelper;
+        compositeDisposable = new CompositeDisposable();
     }
 
     @Override
-    public void init(EventInitialContract.View mview, String programId, String eventId, String orgInitId,
+    public void init(String programId, String eventId, String orgInitId,
                      String programStageId) {
-        this.view = mview;
         this.eventId = eventId;
         this.programId = programId;
         this.programStageId = programStageId;
-
-        compositeDisposable = new CompositeDisposable();
 
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(view.getContext());
 
@@ -168,20 +173,27 @@ public class EventInitialPresenter
                 );
     }
 
-    private void getCatOptionCombos(CategoryCombo categoryCombo, Map<String, CategoryOption> stringCategoryOptionMap) {
-        compositeDisposable
-                .add(
-                        eventInitialRepository.catOptionCombos(categoryCombo.uid()).subscribeOn(schedulerProvider.io())
-                                .observeOn(schedulerProvider.ui()).subscribe(categoryOptionCombos -> view
-                                        .setCatComboOptions(categoryCombo, categoryOptionCombos, stringCategoryOptionMap),
-                                Timber::e));
+    @VisibleForTesting
+    public void getCatOptionCombos(CategoryCombo categoryCombo, Map<String, CategoryOption> stringCategoryOptionMap) {
+        compositeDisposable.add(
+                eventInitialRepository.catOptionCombos(categoryCombo.uid())
+                        .subscribeOn(schedulerProvider.io())
+                        .observeOn(schedulerProvider.ui())
+                        .subscribe(categoryOptionCombos ->
+                                view.setCatComboOptions(categoryCombo, categoryOptionCombos, stringCategoryOptionMap),
+                                Timber::e
+                        )
+        );
     }
 
     @Override
     public void getEventSections(@NonNull String eventId) {
-        compositeDisposable
-                .add(eventSummaryRepository.programStageSections(eventId).subscribeOn(schedulerProvider.io())
-                        .observeOn(schedulerProvider.ui()).subscribe(view::onEventSections, Timber::e));
+        compositeDisposable.add(
+                eventSummaryRepository.programStageSections(eventId)
+                        .subscribeOn(schedulerProvider.io())
+                        .observeOn(schedulerProvider.ui())
+                        .subscribe(view::onEventSections, Timber::e)
+        );
     }
 
     @Override
@@ -190,7 +202,7 @@ public class EventInitialPresenter
     }
 
     @Override
-    public void onShareClick(View mView) {
+    public void onShareClick() {
         view.showQR();
     }
 
@@ -199,8 +211,9 @@ public class EventInitialPresenter
         if (eventId != null) {
             eventInitialRepository.deleteEvent(eventId, trackedEntityInstance);
             view.showEventWasDeleted();
-        } else
-            view.displayMessage(view.getContext().getString(R.string.delete_event_error));
+        } else {
+            view.displayEventAlert();
+        }
     }
 
     @Override
@@ -210,23 +223,32 @@ public class EventInitialPresenter
 
     @Override
     public void getStageObjectStyle(String uid) {
-        compositeDisposable.add(eventInitialRepository.getObjectStyle(uid).subscribeOn(schedulerProvider.io())
-                .observeOn(schedulerProvider.ui())
-                .subscribe(objectStyle -> view.renderObjectStyle(objectStyle), Timber::e));
+        compositeDisposable.add(
+                eventInitialRepository.getObjectStyle(uid)
+                        .subscribeOn(schedulerProvider.io())
+                        .observeOn(schedulerProvider.ui())
+                        .subscribe(objectStyle -> view.renderObjectStyle(objectStyle), Timber::e)
+        );
     }
 
     @Override
     public void getProgramStage(String programStageUid) {
-        compositeDisposable.add(eventInitialRepository.programStageWithId(programStageUid)
-                .subscribeOn(schedulerProvider.io()).observeOn(schedulerProvider.ui()).subscribe(
-                        programStage -> view.setProgramStage(programStage), throwable -> view.showProgramStageSelection()));
+        compositeDisposable.add(
+                eventInitialRepository.programStageWithId(programStageUid)
+                        .subscribeOn(schedulerProvider.io())
+                        .observeOn(schedulerProvider.ui())
+                        .subscribe(programStage -> view.setProgramStage(programStage),
+                                throwable -> view.showProgramStageSelection()
+                        )
+        );
     }
 
     private void getProgramStages(String programUid, String programStageUid) {
-
-        compositeDisposable
-                .add((TextUtils.isEmpty(programStageId) ? eventInitialRepository.programStage(programUid)
-                        : eventInitialRepository.programStageWithId(programStageUid)).subscribeOn(schedulerProvider.io())
+        compositeDisposable.add(
+                (TextUtils.isEmpty(programStageId) ?
+                        eventInitialRepository.programStage(programUid) :
+                        eventInitialRepository.programStageWithId(programStageUid)
+                ).subscribeOn(schedulerProvider.io())
                         .observeOn(schedulerProvider.ui())
                         .subscribe(programStage -> view.setProgramStage(programStage),
                                 throwable -> view.showProgramStageSelection()));
@@ -235,7 +257,7 @@ public class EventInitialPresenter
     @Override
     public void onBackClick() {
         if (eventId != null)
-            view.analyticsHelper().setEvent(BACK_EVENT, CLICK, CREATE_EVENT);
+            analyticsHelper.setEvent(BACK_EVENT, CLICK, CREATE_EVENT);
         view.back();
     }
 

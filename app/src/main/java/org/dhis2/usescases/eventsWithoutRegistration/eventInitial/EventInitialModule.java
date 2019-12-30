@@ -14,6 +14,7 @@ import org.dhis2.data.forms.RulesRepository;
 import org.dhis2.data.schedulers.SchedulerProvider;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryRepository;
 import org.dhis2.usescases.eventsWithoutRegistration.eventSummary.EventSummaryRepositoryImpl;
+import org.dhis2.utils.analytics.AnalyticsHelper;
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.rules.RuleExpressionEvaluator;
 
@@ -27,10 +28,12 @@ import dagger.Provides;
 @Module
 public class EventInitialModule {
 
+    private final EventInitialContract.View view;
     @Nullable
     private String eventUid;
 
-    public EventInitialModule(@Nullable String eventUid) {
+    public EventInitialModule(EventInitialContract.View view, @Nullable String eventUid) {
+        this.view = view;
         this.eventUid = eventUid;
     }
 
@@ -44,8 +47,9 @@ public class EventInitialModule {
     @PerActivity
     EventInitialContract.Presenter providesPresenter(@NonNull EventSummaryRepository eventSummaryRepository,
                                                      @NonNull EventInitialRepository eventInitialRepository,
-                                                     @NonNull SchedulerProvider schedulerProvider) {
-        return new EventInitialPresenter(eventSummaryRepository, eventInitialRepository, schedulerProvider);
+                                                     @NonNull SchedulerProvider schedulerProvider,
+                                                     AnalyticsHelper analyticsHelper) {
+        return new EventInitialPresenter(view, eventSummaryRepository, eventInitialRepository, schedulerProvider, analyticsHelper);
     }
 
 
