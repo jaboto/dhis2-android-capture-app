@@ -501,7 +501,7 @@ public class QRCodeGenerator implements QRInterface {
                 .state(State.valueOf(data[6]))
                 .build();
 
-        briteDatabase.insert("TrackedEntityInstance", tei.toContentValues(), SQLiteDatabase.CONFLICT_REPLACE); //CHECK IF INSERTED
+        briteDatabase.insert("TrackedEntityInstance", SQLiteDatabase.CONFLICT_REPLACE,tei.toContentValues()); //CHECK IF INSERTED
         return tei;
     }
 
@@ -546,7 +546,7 @@ public class QRCodeGenerator implements QRInterface {
                 .trackedEntityInstance(tei.uid())
                 .build();
 
-        briteDatabase.insert("Enrollment", enrollment.toContentValues(), SQLiteDatabase.CONFLICT_REPLACE);
+        briteDatabase.insert("Enrollment", SQLiteDatabase.CONFLICT_REPLACE,enrollment.toContentValues());
         return enrollment;
     }
 
@@ -559,7 +559,7 @@ public class QRCodeGenerator implements QRInterface {
                 .trackedEntityInstance(tei.uid())
                 .value(data[1])
                 .build();
-        briteDatabase.insert("TrackedEntityAttributeValue", attribute.toContentValues(), SQLiteDatabase.CONFLICT_REPLACE);
+        briteDatabase.insert("TrackedEntityAttributeValue", SQLiteDatabase.CONFLICT_REPLACE,attribute.toContentValues());
     }
 
     public Event saveEvent(Enrollment enrollment, String eventData) {
@@ -610,7 +610,7 @@ public class QRCodeGenerator implements QRInterface {
                 .state(State.valueOf(data[10]))
                 .build();
 
-        briteDatabase.insert("Event", event.toContentValues(), SQLiteDatabase.CONFLICT_REPLACE);
+        briteDatabase.insert("Event", SQLiteDatabase.CONFLICT_REPLACE,event.toContentValues());
 
         return event;
     }
@@ -623,7 +623,7 @@ public class QRCodeGenerator implements QRInterface {
                 .value(data[1])
                 .event(event.uid())
                 .build();
-        briteDatabase.insert("TrackedEntityDataValue", dataValue.toContentValues(), SQLiteDatabase.CONFLICT_REPLACE);
+        briteDatabase.insert("TrackedEntityDataValue", SQLiteDatabase.CONFLICT_REPLACE, dataValue.toContentValues());
 
     }
 

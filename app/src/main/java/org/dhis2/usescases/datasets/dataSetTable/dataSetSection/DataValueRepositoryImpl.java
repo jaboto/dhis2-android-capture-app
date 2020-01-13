@@ -1,6 +1,7 @@
 package org.dhis2.usescases.datasets.dataSetTable.dataSetSection;
 
 import android.content.ContentValues;
+import android.database.sqlite.SQLiteDatabase;
 
 import com.squareup.sqlbrite3.BriteDatabase;
 
@@ -289,7 +290,7 @@ public class DataValueRepositoryImpl implements DataValueRepository {
         contentValues.put("date", completeDate);
         String[] values = {periodInitialDate, dataSetUid, catCombo, orgUnitUid};
 
-        updateOrInserted = briteDatabase.update(DataSetCompleteRegistration.class.getSimpleName(), contentValues, where, values) > 0;
+        updateOrInserted = briteDatabase.update(DataSetCompleteRegistration.class.getSimpleName(), SQLiteDatabase.CONFLICT_NONE,contentValues, where, values) > 0;
 
         if (!updateOrInserted) {
             DataSetCompleteRegistration dataSetCompleteRegistration =
@@ -300,7 +301,7 @@ public class DataValueRepositoryImpl implements DataValueRepository {
                             .date(Calendar.getInstance().getTime())
                             .state(State.TO_POST).build();
 
-            updateOrInserted = briteDatabase.insert(DataSetCompleteRegistration.class.getSimpleName(), dataSetCompleteRegistration.toContentValues()) > 0;
+            updateOrInserted = briteDatabase.insert(DataSetCompleteRegistration.class.getSimpleName(), SQLiteDatabase.CONFLICT_NONE,dataSetCompleteRegistration.toContentValues()) > 0;
         }
 
         return Flowable.just(updateOrInserted);
@@ -327,7 +328,7 @@ public class DataValueRepositoryImpl implements DataValueRepository {
             String completeDate = DateUtils.databaseDateFormat().format(DateUtils.getInstance().getToday());
             contentValues.put("date", completeDate);
 
-            return Flowable.just(briteDatabase.update(DataSetCompleteRegistration.class.getSimpleName(), contentValues, where, values) > 0);
+            return Flowable.just(briteDatabase.update(DataSetCompleteRegistration.class.getSimpleName(), SQLiteDatabase.CONFLICT_NONE, contentValues, where, values) > 0);
         }else {
             String where = "period = ? AND dataSet = ? AND attributeOptionCombo = ? and organisationUnit = ? ";
             String[] values = {periodInitialDate, dataSetUid, catCombo, orgUnitUid};

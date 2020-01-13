@@ -55,6 +55,7 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -429,7 +430,7 @@ public class DashboardRepositoryImpl
             cv.put("lastUpdated", DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
             cv.put("status", value.name());
             cv.put("state", enrollment.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-            long updated = briteDatabase.update("Enrollment", cv, "uid = ?", enrollment.uid());
+            long updated = briteDatabase.update("Enrollment", SQLiteDatabase.CONFLICT_NONE,cv, "uid = ?", enrollment.uid());
 
             updateTeiState();
             return Flowable.just(updated);
@@ -509,7 +510,7 @@ public class DashboardRepositoryImpl
         // the EventObjectRepository is available
         ContentValues event = new ContentValues();
         event.put(EventTableInfo.Columns.ATTRIBUTE_OPTION_COMBO, catOptionComboUid);
-        briteDatabase.update(EventTableInfo.TABLE_INFO.name(), event, EventTableInfo.Columns.UID + " = ?",
+        briteDatabase.update(EventTableInfo.TABLE_INFO.name(), SQLiteDatabase.CONFLICT_NONE,event, EventTableInfo.Columns.UID + " = ?",
                 eventUid == null ? "" : eventUid);
     }
 
@@ -518,7 +519,7 @@ public class DashboardRepositoryImpl
         ContentValues cv = enrollment.toContentValues();
         cv.put("lastUpdated", DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
         cv.put("state", enrollment.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
-        long updated = briteDatabase.update("Enrollment", cv, "uid = ?", enrollment.uid());
+        long updated = briteDatabase.update("Enrollment", SQLiteDatabase.CONFLICT_NONE,cv, "uid = ?", enrollment.uid());
     }
 
     @Override
@@ -528,6 +529,6 @@ public class DashboardRepositoryImpl
         cv.put(TrackedEntityInstanceTableInfo.Columns.STATE,
                 tei.state() == State.TO_POST ? State.TO_POST.name() : State.TO_UPDATE.name());
         cv.put("lastUpdated", DateUtils.databaseDateFormat().format(Calendar.getInstance().getTime()));
-        briteDatabase.update("TrackedEntityInstance", cv, "uid = ?", teiUid);
+        briteDatabase.update("TrackedEntityInstance", SQLiteDatabase.CONFLICT_NONE,cv, "uid = ?", teiUid);
     }
 }

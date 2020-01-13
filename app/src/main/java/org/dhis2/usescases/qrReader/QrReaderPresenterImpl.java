@@ -1,6 +1,7 @@
 package org.dhis2.usescases.qrReader;
 
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.util.Log;
 
 import com.squareup.sqlbrite3.BriteDatabase;
@@ -384,7 +385,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 TrackedEntityInstance teiModel = teiModelBuilder.build();
 
                 if (teiModel != null)
-                    briteDatabase.insert(TrackedEntityInstanceTableInfo.TABLE_INFO.name(), teiModel.toContentValues());
+                    briteDatabase.insert(TrackedEntityInstanceTableInfo.TABLE_INFO.name(), SQLiteDatabase.CONFLICT_NONE,teiModel.toContentValues());
             } else {
                 view.showIdError();
                 return;
@@ -416,7 +417,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                         TrackedEntityAttributeValue attrValueModel = attrValueModelBuilder.build();
 
                         if (attrValueModel != null)
-                            briteDatabase.insert(TrackedEntityAttributeValueTableInfo.TABLE_INFO.name(), attrValueModel.toContentValues());
+                            briteDatabase.insert(TrackedEntityAttributeValueTableInfo.TABLE_INFO.name(), SQLiteDatabase.CONFLICT_NONE,attrValueModel.toContentValues());
 
                     } catch (JSONException | ParseException e) {
                         Timber.e(e);
@@ -488,7 +489,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                         Enrollment enrollment = enrollmentBuilder.build();
 
                         if (enrollment != null)
-                            briteDatabase.insert(EnrollmentTableInfo.TABLE_INFO.name(), enrollment.toContentValues());
+                            briteDatabase.insert(EnrollmentTableInfo.TABLE_INFO.name(), SQLiteDatabase.CONFLICT_NONE,enrollment.toContentValues());
 
                     } catch (JSONException | ParseException e) {
                         Timber.e(e);
@@ -541,7 +542,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                     Event eventModel = eventBuilder.build();
 
                     if (eventModel != null)
-                        briteDatabase.insert(EventTableInfo.TABLE_INFO.name(), eventModel.toContentValues());
+                        briteDatabase.insert(EventTableInfo.TABLE_INFO.name(), SQLiteDatabase.CONFLICT_NONE,eventModel.toContentValues());
 
                 } catch (JSONException | ParseException e) {
                     Timber.e(e);
@@ -572,7 +573,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 TrackedEntityDataValue attrValueModel = attrValueModelBuilder.build();
 
                 if (attrValueModel != null) {
-                    long result = briteDatabase.insert(TrackedEntityDataValueTableInfo.TABLE_INFO.name(), attrValueModel.toContentValues());
+                    long result = briteDatabase.insert(TrackedEntityDataValueTableInfo.TABLE_INFO.name(), SQLiteDatabase.CONFLICT_NONE,attrValueModel.toContentValues());
                     Log.d("RESULT", "insert event " + result);
                 }
 
@@ -691,7 +692,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                     if (cursor != null && cursor.moveToFirst() && cursor.getCount() > 0) {
                         // EVENT ALREADY EXISTS IN THE DATABASE, JUST INSERT ATTRIBUTES
                     } else {
-                        long result = briteDatabase.insert(EventTableInfo.TABLE_INFO.name(), event.toContentValues());
+                        long result = briteDatabase.insert(EventTableInfo.TABLE_INFO.name(), SQLiteDatabase.CONFLICT_NONE,event.toContentValues());
                         Log.d("RESULT", "insert event " + result);
                     }
                 }
@@ -727,7 +728,7 @@ class QrReaderPresenterImpl implements QrReaderContracts.Presenter {
                 TrackedEntityDataValue attrValueModel = attrValueModelBuilder.build();
 
                 if (attrValueModel != null) {
-                    long result = briteDatabase.insert(TrackedEntityDataValueTableInfo.TABLE_INFO.name(), attrValueModel.toContentValues());
+                    long result = briteDatabase.insert(TrackedEntityDataValueTableInfo.TABLE_INFO.name(), SQLiteDatabase.CONFLICT_NONE,attrValueModel.toContentValues());
                     Log.d("RESULT", "insert event " + result);
                 }
 

@@ -3,6 +3,7 @@ package org.dhis2.usescases.teiDashboard.teiProgramList;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteConstraintException;
+import android.database.sqlite.SQLiteDatabase;
 
 import androidx.annotation.NonNull;
 
@@ -152,8 +153,8 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
             dataValue.put("state",
                     State.TO_POST.toString());
 
-            if (briteDatabase.update("TrackedEntityInstance", dataValue,
-                    "uid = ? ", teiUid == null ? "" : teiUid) <= 0) {
+            if (briteDatabase.update("TrackedEntityInstance", SQLiteDatabase.CONFLICT_NONE,
+                    dataValue, "uid = ? ", teiUid == null ? "" : teiUid) <= 0) {
                 String message = String.format(Locale.US, "Failed to update tracked entity " +
                                 "instance for uid=[%s]",
                         teiUid);
@@ -173,7 +174,7 @@ public class TeiProgramListRepositoryImpl implements TeiProgramListRepository {
                     .state(State.TO_POST)
                     .build();
 
-            if (briteDatabase.insert("Enrollment", enrollmentModel.toContentValues()) < 0) {
+            if (briteDatabase.insert("Enrollment", SQLiteDatabase.CONFLICT_NONE, enrollmentModel.toContentValues()) < 0) {
                 String message = String.format(Locale.US, "Failed to insert new enrollment " +
                         "instance for organisationUnit=[%s] and program=[%s]", orgUnit, programUid);
                 return Observable.error(new SQLiteConstraintException(message));

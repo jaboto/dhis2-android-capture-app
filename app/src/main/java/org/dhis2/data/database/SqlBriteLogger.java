@@ -1,7 +1,7 @@
 package org.dhis2.data.database;
 
 
-import com.squareup.sqlbrite2.SqlBrite;
+import com.squareup.sqlbrite3.SqlBrite;
 
 import timber.log.Timber;
 
