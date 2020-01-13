@@ -2,7 +2,7 @@ package org.dhis2.utils;
 
 import android.database.Cursor;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.hisp.dhis.android.core.common.ValueType;
 import org.hisp.dhis.android.core.option.Option;

@@ -1,7 +1,7 @@
 package org.dhis2.usescases.reservedValue;
 
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityAttributeTableInfo;

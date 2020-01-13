@@ -1,7 +1,7 @@
 package org.dhis2.usescases.qrReader;
 
 import org.dhis2.data.dagger.PerFragment;
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.dhis2.data.schedulers.SchedulerProvider;
 import org.hisp.dhis.android.core.D2;

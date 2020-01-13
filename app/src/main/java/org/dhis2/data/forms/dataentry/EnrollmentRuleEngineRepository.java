@@ -33,7 +33,7 @@ import org.hisp.dhis.rules.models.RuleEffect;
 import org.hisp.dhis.rules.models.RuleEnrollment;
 import org.jetbrains.annotations.NotNull;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import androidx.annotation.NonNull;
 

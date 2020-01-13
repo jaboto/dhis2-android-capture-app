@@ -4,8 +4,8 @@ import android.content.Context;
 
 import androidx.annotation.Nullable;
 
-import com.squareup.sqlbrite2.BriteDatabase;
-import com.squareup.sqlbrite2.SqlBrite;
+
+import com.squareup.sqlbrite3.SqlBrite;
 
 import org.dhis2.data.dagger.PerServer;
 import org.dhis2.data.schedulers.SchedulerProvider;

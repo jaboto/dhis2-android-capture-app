@@ -5,7 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.dhis2.data.dagger.PerActivity;
 import org.dhis2.data.forms.EventRepository;

@@ -51,8 +51,6 @@ import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstance;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityInstanceTableInfo;
 import org.hisp.dhis.android.core.trackedentity.TrackedEntityType;
 
-import com.squareup.sqlbrite2.BriteDatabase;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
@@ -60,6 +58,8 @@ import android.database.Cursor;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import io.reactivex.BackpressureStrategy;
 import io.reactivex.Flowable;

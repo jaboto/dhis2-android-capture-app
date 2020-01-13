@@ -1,6 +1,6 @@
 package org.dhis2.data.qr;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import javax.inject.Singleton;
 

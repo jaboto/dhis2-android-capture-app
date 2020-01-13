@@ -10,7 +10,7 @@ import androidx.paging.DataSource;
 import androidx.paging.LivePagedListBuilder;
 import androidx.paging.PagedList;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.dhis2.Bindings.ExtensionsKt;
 import org.dhis2.data.tuples.Pair;

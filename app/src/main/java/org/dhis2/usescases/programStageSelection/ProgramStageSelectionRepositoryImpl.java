@@ -2,7 +2,7 @@ package org.dhis2.usescases.programStageSelection;
 
 import androidx.annotation.NonNull;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.dhis2.data.forms.RulesRepository;
 import org.dhis2.utils.EventCreationType;

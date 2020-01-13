@@ -1,6 +1,5 @@
 package org.dhis2.usescases.programStageSelection;
 
-import com.squareup.sqlbrite2.BriteDatabase;
 
 import org.dhis2.data.dagger.PerActivity;
 import org.dhis2.data.forms.RulesRepository;
@@ -10,6 +9,9 @@ import org.hisp.dhis.android.core.D2;
 import org.hisp.dhis.rules.RuleExpressionEvaluator;
 
 import androidx.annotation.NonNull;
+
+import com.squareup.sqlbrite3.BriteDatabase;
+
 import dagger.Module;
 import dagger.Provides;
 

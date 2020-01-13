@@ -34,7 +34,7 @@ import org.hisp.dhis.android.core.trackedentity.TrackedEntityDataValue;
 
 import com.mapbox.geojson.BoundingBox;
 import com.mapbox.geojson.FeatureCollection;
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import androidx.annotation.NonNull;
 import androidx.lifecycle.LiveData;

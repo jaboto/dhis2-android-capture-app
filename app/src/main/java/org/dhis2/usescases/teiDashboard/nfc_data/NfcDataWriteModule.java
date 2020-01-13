@@ -1,6 +1,6 @@
 package org.dhis2.usescases.teiDashboard.nfc_data;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.dhis2.data.dagger.PerActivity;
 import org.dhis2.data.qr.QRCodeGenerator;

@@ -3,7 +3,7 @@ package org.dhis2.usescases.teiDashboard
 import com.nhaarman.mockitokotlin2.doReturn
 import com.nhaarman.mockitokotlin2.mock
 import com.nhaarman.mockitokotlin2.whenever
-import com.squareup.sqlbrite2.BriteDatabase
+import com.squareup.sqlbrite3.BriteDatabase
 import io.reactivex.Single
 import org.dhis2.utils.CodeGenerator
 import org.dhis2.utils.DateUtils

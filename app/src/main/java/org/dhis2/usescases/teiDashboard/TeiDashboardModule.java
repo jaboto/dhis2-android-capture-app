@@ -2,7 +2,7 @@ package org.dhis2.usescases.teiDashboard;
 
 import androidx.annotation.NonNull;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.dhis2.data.dagger.PerActivity;
 import org.dhis2.data.forms.EnrollmentFormRepository;

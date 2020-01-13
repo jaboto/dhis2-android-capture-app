@@ -1,6 +1,6 @@
 package org.dhis2.usescases.datasets.dataSetTable.dataSetSection
 
-import com.squareup.sqlbrite2.BriteDatabase
+import com.squareup.sqlbrite3.BriteDatabase
 import dagger.Module
 import dagger.Provides
 import org.dhis2.data.dagger.PerFragment

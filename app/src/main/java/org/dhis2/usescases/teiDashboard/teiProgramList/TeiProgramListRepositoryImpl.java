@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteConstraintException;
 
 import androidx.annotation.NonNull;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.dhis2.usescases.main.program.ProgramViewModel;
 import org.dhis2.utils.CodeGenerator;

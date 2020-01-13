@@ -3,7 +3,7 @@ package org.dhis2.usescases.qrReader;
 import android.database.Cursor;
 import android.util.Log;
 
-import com.squareup.sqlbrite2.BriteDatabase;
+import com.squareup.sqlbrite3.BriteDatabase;
 
 import org.dhis2.data.schedulers.SchedulerProvider;
 import org.dhis2.data.tuples.Pair;
